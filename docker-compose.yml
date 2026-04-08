@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # FastAPI 后端
+  backend:
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+    ports:
+      - "4000:8000"
+    volumes:
+      - ./src/backend:/app
+      - ./assets:/app/assets
+    environment:
+      - DATABASE_URL=sqlite:///./aimedia.db
+      - REDIS_URL=redis://redis:6379/0
+      - KIMI_API_KEY=${KIMI_API_KEY}
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY}
+      - KLLING_API_KEY=${KLING_API_KEY}
+    depends_on:
+      - redis
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Redis (Celery Broker)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # Celery Worker
+  celery:
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./src/backend:/app
+      - ./assets:/app/assets
+    environment:
+      - DATABASE_URL=sqlite:///./aimedia.db
+      - REDIS_URL=redis://redis:6379/0
+      - KIMI_API_KEY=${KIMI_API_KEY}
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY}
+      - KLING_API_KEY=${KLING_API_KEY}
+    depends_on:
+      - redis
+      - backend
+    command: celery -A app.celery_app worker --loglevel=info
+
+  # Vue3 前端
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "4001:80"
+    volumes:
+      - ./src/frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_BASE_URL=http://localhost:4000
+
+volumes:
+  redis_data:
