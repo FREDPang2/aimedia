@@ -53,7 +53,7 @@ def _series_to_response(s: Series, episode_count: int) -> dict:
     }
 
 
-@router.post("/")
+@router.post("")
 def create_series(series: SeriesCreate, db: Session = Depends(get_db)):
     """创建新系列"""
     db_series = Series(
@@ -68,7 +68,7 @@ def create_series(series: SeriesCreate, db: Session = Depends(get_db)):
     return _series_to_response(db_series, 0)
 
 
-@router.get("/")
+@router.get("")
 def list_series(project_id: int = None, db: Session = Depends(get_db)):
     """获取所有系列"""
     query = db.query(Series)

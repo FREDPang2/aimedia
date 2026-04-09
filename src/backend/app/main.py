@@ -15,7 +15,8 @@ init_database()
 app = FastAPI(
     title="AIMedia API",
     description="AI 视频生产管线 API",
-    version="0.1.0"
+    version="0.1.0",
+    redirect_slashes=False  # 禁用尾部斜杠重定向，避免 POST 请求被转为 GET
 )
 
 # CORS 配置

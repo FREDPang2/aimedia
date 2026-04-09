@@ -45,7 +45,7 @@ def _episode_to_response(ep: Episode) -> dict:
     }
 
 
-@router.post("/")
+@router.post("")
 def create_episode(episode: EpisodeCreate, db: Session = Depends(get_db)):
     """创建新分集"""
     db_episode = Episode(
@@ -61,7 +61,7 @@ def create_episode(episode: EpisodeCreate, db: Session = Depends(get_db)):
     return _episode_to_response(db_episode)
 
 
-@router.get("/")
+@router.get("")
 def list_episodes(series_id: int = None, db: Session = Depends(get_db)):
     """获取所有分集"""
     query = db.query(Episode)

@@ -66,7 +66,7 @@ def _project_to_response(project: Project, db: Session) -> dict:
     }
 
 
-@router.post("/")
+@router.post("")
 def create_project(project: ProjectCreate, db: Session = Depends(get_db)):
     """创建新项目"""
     db_project = Project(
@@ -83,7 +83,7 @@ def create_project(project: ProjectCreate, db: Session = Depends(get_db)):
     return _project_to_response(db_project, db)
 
 
-@router.get("/")
+@router.get("")
 def list_projects(db: Session = Depends(get_db)):
     """获取所有项目"""
     projects = db.query(Project).all()
