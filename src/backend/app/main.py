@@ -16,7 +16,7 @@ app = FastAPI(
     title="AIMedia API",
     description="AI 视频生产管线 API",
     version="0.1.0",
-    redirect_slashes=False  # 禁用尾部斜杠重定向，避免 POST 请求被转为 GET
+    redirect_slashes=True  # 允许尾部斜杠重定向，兼容 /series 和 /series/ 两种调用
 )
 
 # CORS 配置
