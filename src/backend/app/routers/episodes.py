@@ -2,6 +2,8 @@
 分集路由
 """
 
+import asyncio
+import threading
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -9,7 +11,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Episode, EpisodeStatus
+from models import Episode, EpisodeStatus, Series
 
 router = APIRouter()
 
@@ -45,7 +47,7 @@ def _episode_to_response(ep: Episode) -> dict:
     }
 
 
-@router.post("")
+@router.post("/")
 def create_episode(episode: EpisodeCreate, db: Session = Depends(get_db)):
     """创建新分集"""
     db_episode = Episode(
@@ -61,7 +63,7 @@ def create_episode(episode: EpisodeCreate, db: Session = Depends(get_db)):
     return _episode_to_response(db_episode)
 
 
-@router.get("")
+@router.get("/")
 def list_episodes(series_id: int = None, db: Session = Depends(get_db)):
     """获取所有分集"""
     query = db.query(Episode)
@@ -115,12 +117,52 @@ def patch_episode_script(episode_id: int, body: dict, db: Session = Depends(get_
 
 @router.post("/{episode_id}/generate-script")
 def generate_script(episode_id: int, db: Session = Depends(get_db)):
-    """触发 AI 脚本生成任务"""
+    """使用 AI 生成视频脚本"""
     episode = db.query(Episode).filter(Episode.id == episode_id).first()
     if not episode:
         raise HTTPException(status_code=404, detail="Episode not found")
+
     episode.status = EpisodeStatus.SCRIPT_GENERATING.value
     db.commit()
+
+    # 获取系列信息用于提示词
+    series = db.query(Series).filter(Series.id == episode.series_id).first()
+    series_theme = series.title if series else "未指定主题"
+
+    # 后台异步执行 AI 生成
+    try:
+        from app.services.workflow import create_script_storyboard
+
+        def generate():
+            try:
+                result = asyncio.run(create_script_storyboard(
+                    episode_id=episode_id,
+                    episode_title=episode.title,
+                    episode_number=episode.episode_number,
+                    episode_outline=episode.outline or ""
+                ))
+                # 更新脚本内容
+                from database import get_db as _get_db
+                db2 = next(_get_db())
+                ep = db2.query(Episode).filter(Episode.id == episode_id).first()
+                if ep:
+                    ep.script = result.get("script", "")
+                    ep.status = EpisodeStatus.SCRIPT_GENERATED.value
+                    db2.commit()
+            except Exception as e:
+                print(f"[ERROR] Script generation failed for episode {episode_id}: {e}")
+                from database import get_db as _get_db
+                db2 = next(_get_db())
+                ep = db2.query(Episode).filter(Episode.id == episode_id).first()
+                if ep:
+                    ep.status = EpisodeStatus.FAILED.value
+                    db2.commit()
+
+        thread = threading.Thread(target=generate)
+        thread.start()
+    except Exception as e:
+        print(f"[WARN] Failed to start script generation thread: {e}")
+
     return {"message": "Script generation started", "episode_id": episode_id, "status": episode.status}
 
 
