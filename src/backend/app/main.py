@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import init_database
-from app.routers import projects, series, episodes, openclaw
+from app.routers import projects, series, episodes, openclaw, tasks
 
 # 初始化数据库
 init_database()
@@ -31,6 +31,7 @@ app.add_middleware(
 app.include_router(projects.router, prefix="/api/v1/projects", tags=["projects"])
 app.include_router(series.router, prefix="/api/v1/series", tags=["series"])
 app.include_router(episodes.router, prefix="/api/v1/episodes", tags=["episodes"])
+app.include_router(tasks.router, prefix="/api/v1/tasks", tags=["tasks"])
 app.include_router(openclaw.router, prefix="/api/v1/openclaw", tags=["openclaw"])
 
 

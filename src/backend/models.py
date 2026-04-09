@@ -69,6 +69,7 @@ class Series(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
     title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
     outline = Column(Text, nullable=True)  # JSON 格式的大纲
     status = Column(String(50), default=SeriesStatus.DRAFT.value)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -86,6 +87,7 @@ class Episode(Base):
     series_id = Column(Integer, ForeignKey("series.id"), nullable=False)
     episode_number = Column(Integer, nullable=False)
     title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
     outline = Column(Text, nullable=True)  # 单集详细提纲
     script = Column(Text, nullable=True)  # 完整脚本 (JSON)
     storyboard = Column(Text, nullable=True)  # 分镜描述 (JSON)
