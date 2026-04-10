@@ -34,9 +34,10 @@
 |--------|------|------|
 | P0 | **Pending changes 提交** | ✅ 已提交（2026-04-10） |
 | P0 | **完整视频管线联调** | ✅ 已联调（2026-04-10） |
-| P1 | **OpenClaw 控制接口** | openclaw router 完善 |
-| P1 | **前端 AI 生成按钮绑定** | ✅ 已绑定（2026-04-10） |
-| P1 | **前端视频播放** | video_path 回显 + 播放 |
+| P1 | **OpenClaw 控制接口** | ✅ 已完成（2026-04-10）- /projects, /series, /episodes, /generate-video 接口 |
+| P1 | **前端 AI 生成按钮绑定** | ✅ 已完成（2026-04-10） |
+| P1 | **前端视频播放** | ✅ 已完成（2026-04-10）- video_path 回显 + video 播放器 |
+| P1 | **前端状态轮询** | ✅ 已完成（2026-04-10）- 3秒轮询，AI生成中自动刷新 |
 | P2 | **E2E 完整流程测试** | 从创建项目到生成视频 |
 | P2 | **错误处理完善** | 各环节超时/重试/降级 |
 | P2 | **配置文件管理** | API Keys / 代理配置页面 |
@@ -162,14 +163,14 @@ AI 生成过程中：
 
 ```
 Phase 1（现在）:
-  [Task 0] 提交 pending changes
-  [Task 1] 视频管线联调 + E2E 验证
-  [Task 2] 前后端 AI 串联
+  [Task 0] 提交 pending changes ✅
+  [Task 1] 视频管线联调 + E2E 验证 ✅
+  [Task 2] 前后端 AI 串联 ✅
 
 Phase 2:
-  [Task 3] OpenClaw 控制接口完善
-  [Task 4] 前端视频播放
-  [Task 5] 状态轮询
+  [Task 3] OpenClaw 控制接口完善 ✅
+  [Task 4] 前端视频播放 ✅
+  [Task 5] 状态轮询 ✅
 
 Phase 3:
   [Task 6] E2E 完整测试
