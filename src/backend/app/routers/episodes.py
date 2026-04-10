@@ -41,6 +41,7 @@ def _episode_to_response(ep: Episode) -> dict:
         "outline": ep.outline or "",
         "script": ep.script or "",
         "storyboard": ep.storyboard or "",
+        "video_path": ep.video_path or "",
         "status": ep.status,
         "created_at": str(ep.created_at) if ep.created_at else "",
         "tasks": []
@@ -168,12 +169,62 @@ def generate_script(episode_id: int, db: Session = Depends(get_db)):
 
 @router.post("/{episode_id}/generate-video")
 def generate_video(episode_id: int, db: Session = Depends(get_db)):
-    """触发视频生成任务"""
+    """触发视频生成任务（异步执行完整管线）"""
     episode = db.query(Episode).filter(Episode.id == episode_id).first()
     if not episode:
         raise HTTPException(status_code=404, detail="Episode not found")
-    if episode.status not in [EpisodeStatus.SCRIPT_GENERATED.value, EpisodeStatus.VIDEO_GENERATING.value]:
+    if episode.status not in [EpisodeStatus.SCRIPT_GENERATED.value, EpisodeStatus.VIDEO_COMPLETED.value]:
         raise HTTPException(status_code=400, detail="Script must be generated before video generation")
     episode.status = EpisodeStatus.VIDEO_GENERATING.value
     db.commit()
+
+    # 后台异步执行管线
+    try:
+        from app.services.video_pipeline import run_pipeline
+        import tempfile
+
+        def generate():
+            try:
+                from database import get_db as _get_db
+                db2 = next(_get_db())
+                ep = db2.query(Episode).filter(Episode.id == episode_id).first()
+                if not ep or not ep.script:
+                    raise ValueError("Episode or script not found")
+
+                output_dir = tempfile.gettempdir()
+                ok, msg, video_path = run_pipeline(
+                    episode_id=episode_id,
+                    script_json=ep.script,
+                    output_dir=output_dir,
+                )
+
+                db3 = next(_get_db())
+                ep2 = db3.query(Episode).filter(Episode.id == episode_id).first()
+                if ep2:
+                    if ok:
+                        ep2.video_path = video_path
+                        ep2.status = EpisodeStatus.VIDEO_COMPLETED.value
+                        print(f"[SUCCESS] Video pipeline complete: {video_path}")
+                    else:
+                        ep2.status = EpisodeStatus.VIDEO_FAILED.value
+                        print(f"[ERROR] Video pipeline failed: {msg}")
+                    db3.commit()
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                try:
+                    from database import get_db as _get_db
+                    db_fail = next(_get_db())
+                    ep_fail = db_fail.query(Episode).filter(Episode.id == episode_id).first()
+                    if ep_fail:
+                        ep_fail.status = EpisodeStatus.VIDEO_FAILED.value
+                        db_fail.commit()
+                except Exception:
+                    pass
+
+        thread = threading.Thread(target=generate)
+        thread.start()
+    except Exception as e:
+        print(f"[WARN] Failed to start video generation thread: {e}")
+
     return {"message": "Video generation started", "episode_id": episode_id, "status": episode.status}

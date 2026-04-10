@@ -35,6 +35,8 @@ class EpisodeStatus(str, Enum):
     SCRIPT_GENERATING = "script_generating"
     SCRIPT_GENERATED = "script_generated"
     VIDEO_GENERATING = "video_generating"
+    VIDEO_COMPLETED = "video_completed"
+    VIDEO_FAILED = "video_failed"
     COMPLETED = "completed"
     FAILED = "failed"
 
@@ -91,6 +93,7 @@ class Episode(Base):
     outline = Column(Text, nullable=True)  # 单集详细提纲
     script = Column(Text, nullable=True)  # 完整脚本 (JSON)
     storyboard = Column(Text, nullable=True)  # 分镜描述 (JSON)
+    video_path = Column(String(500), nullable=True)  # 最终视频文件路径
     status = Column(String(50), default=EpisodeStatus.DRAFT.value)
     duration_estimate = Column(Integer, nullable=True)  # 预估时长(秒)
     created_at = Column(DateTime, default=datetime.utcnow)

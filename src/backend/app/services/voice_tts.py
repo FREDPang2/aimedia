@@ -13,7 +13,7 @@ MINIMAX_BASE_URL = "https://api.minimaxi.com"
 DEFAULT_VOICE = "longxiao"
 
 
-def generate_voice(text: str, output_path: str, voice: str = DEFAULT_VOICE) -> bool:
+def generate_voice(text: str, output_path: str, voice: str = DEFAULT_VOICE) -> tuple[bool, str]:
     """
     使用 MiniMax TTS API 生成语音
 
@@ -23,11 +23,11 @@ def generate_voice(text: str, output_path: str, voice: str = DEFAULT_VOICE) -> b
         voice: 语音名称，默认使用中文男声 "longxiao"
 
     Returns:
-        bool: 生成成功返回 True，失败返回 False
+        (success, message): 成功返回 (True, output_path)，失败返回 (False, error_msg)
     """
     text = text.strip()
     if not text:
-        return False
+        return True, ""  # 空文本不算错误
 
     # 确保输出目录存在
     output_dir = os.path.dirname(output_path)
@@ -61,18 +61,28 @@ def generate_voice(text: str, output_path: str, voice: str = DEFAULT_VOICE) -> b
             if response.status_code == 200:
                 with open(output_path, "wb") as f:
                     f.write(response.content)
-                return True
+                return True, output_path
             else:
-                print(f"[voice_tts] attempt {attempt + 1} failed: {response.status_code} {response.text[:200]}")
+                err = f"attempt {attempt + 1} failed: {response.status_code} {response.text[:200]}"
+                print(f"[voice_tts] {err}")
+                if attempt == 2:
+                    return False, err
         except Exception as e:
-            print(f"[voice_tts] attempt {attempt + 1} exception: {e}")
+            err = f"attempt {attempt + 1} exception: {e}"
+            print(f"[voice_tts] {err}")
+            if attempt == 2:
+                return False, err
 
-    return False
+    return False, "未知错误"
 
 
 if __name__ == "__main__":
     # 简单测试
     test_text = "你好，欢迎使用 MiniMax 语音合成服务。"
     test_output = "/tmp/test_voice.mp3"
-    success = generate_voice(test_text, test_output)
-    print(f"生成成功: {success}" if success else "生成失败")
+    ok, msg = generate_voice(test_text, test_output)
+    if ok:
+        import os
+        print(f"生成成功: {msg} ({os.path.getsize(msg)} bytes)")
+    else:
+        print(f"生成失败: {msg}")
