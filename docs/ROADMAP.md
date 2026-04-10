@@ -41,7 +41,7 @@
 | P2 | **E2E 完整流程测试** | 🔄 部分验证（2026-04-10）- /generate-video route已验证，真实视频生成待KLING_API_KEY配置 |
 | P2 | **错误处理完善** | 🔄 基础完成（2026-04-10）- pipeline有try/except，Kling重试3次逻辑待实现 |
 | P2 | **配置文件管理** | ⬜ 待开发 - API Keys / 代理配置页面 |
-| P3 | **Docker 部署** | ⬜ 待开发 - docker-compose.yml |
+| P3 | **Docker 部署** | 🔄 进行中 (2026-04-10) - frontend Dockerfile + nginx.conf 已创建，compose typo 已修复 |
 | P3 | **文档完善** | ⬜ 待开发 - API 文档 / 用户指南 |
 
 ---
