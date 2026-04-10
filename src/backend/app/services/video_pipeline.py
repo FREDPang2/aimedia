@@ -51,8 +51,29 @@ def parse_script(script_json: str) -> list[dict]:
 
     scenes = []
 
+    # shots 格式: {"shots": [{"shot_id": 1, "narration": "...", "video_prompt": "...", "duration": 5}]}
+    if isinstance(data, dict) and "shots" in data:
+        for shot in data["shots"]:
+            text = shot.get("narration") or shot.get("voiceover_text") or shot.get("text") or ""
+            prompt = shot.get("video_prompt") or shot.get("prompt") or text
+            duration = shot.get("duration", 5)
+            try:
+                duration = int(duration)
+            except (ValueError, TypeError):
+                duration = 5
+            scenes.append({
+                "index": shot.get("shot_id", 0),
+                "text": text,
+                "prompt": prompt,
+                "duration": duration,
+                "character": shot.get("scene") or shot.get("character") or "",
+                "timecode": "",
+                "camera": shot.get("camera") or "",
+                "music": "",
+            })
+
     # storyboard 格式
-    if isinstance(data, dict) and "scenes" in data:
+    elif isinstance(data, dict) and "scenes" in data:
         for i, scene in enumerate(data["scenes"]):
             text = scene.get("dialogue") or scene.get("text") or ""
             prompt = scene.get("action") or scene.get("prompt") or text
