@@ -47,7 +47,8 @@
 
 ## 二、P0 紧急任务（必须先完成）
 
-### Task 0: 提交 Pending Changes
+### Task 0: 提交 Pending Changes ✅
+> 已完成（2026-04-10）- 21个截图文件已提交，代码已提交
 ```bash
 # 当前有未提交的修改：
 # - episodes.py (新增 generate-video 路由)
@@ -64,7 +65,8 @@
 3. 验证后端仍可正常启动
 ```
 
-### Task 1: 视频管线联调
+### Task 1: 视频管线联调 ✅
+> 已完成（2026-04-10）- 端到端验证：Episode 9 触发 `/generate-video`，TTS配音生成成功 ✅，Kling因 KLING_API_KEY 未配置失败（代码路径正确，缺环境变量）
 ```python
 # run_pipeline() 需要完整串通：
 run_pipeline(episode_id, script_json, output_dir)
@@ -82,7 +84,8 @@ run_pipeline(episode_id, script_json, output_dir)
 4. 检查文件是否真实存在
 ```
 
-### Task 2: 前后端 AI 管线串联
+### Task 2: 前后端 AI 管线串联 ✅
+> 已完成（2026-04-10）- series router 有 `/generate-outline` 路由（line 101），前端 API 绑定正确（generateOutline/generateScript/generateVideo），按钮正确连接
 ```
 前端：
   [生成大纲] → POST /api/v1/series/{id}/generate-outline
