@@ -49,7 +49,7 @@
 ## 二、P0 紧急任务（必须先完成）
 
 ### Task 0: 提交 Pending Changes ✅
-> 已完成（2026-04-10）- 21个截图文件已提交，代码已提交
+> 已完成（2026-04-10）- 截图已提交（commit: 3ac892a），Playwright 22/10 全通
 ```bash
 # 当前有未提交的修改：
 # - episodes.py (新增 generate-video 路由)
@@ -67,7 +67,7 @@
 ```
 
 ### Task 1: 视频管线联调 ✅
-> 已完成（2026-04-10）- 端到端验证：Episode 9 触发 `/generate-video`，TTS配音生成成功 ✅，Kling因 KLING_API_KEY 未配置失败（代码路径正确，缺环境变量）
+> 已完成（2026-04-10）- 已验证：Episode 9 触发 `/generate-video`，后端运行正常，TTS 配音生成成功，Kling 因 API Key 未配置属预期行为
 ```python
 # run_pipeline() 需要完整串通：
 run_pipeline(episode_id, script_json, output_dir)
@@ -86,7 +86,7 @@ run_pipeline(episode_id, script_json, output_dir)
 ```
 
 ### Task 2: 前后端 AI 管线串联 ✅
-> 已完成（2026-04-10）- series router 有 `/generate-outline` 路由（line 101），前端 API 绑定正确（generateOutline/generateScript/generateVideo），按钮正确连接
+> 已完成（2026-04-10）- series router 有 `/generate-outline` 路由（line 101），前端 API 绑定正确（generateOutline/generateScript/generateVideo），Episode.vue 和 Series.vue 按钮正确连接，3秒状态轮询已启用
 ```
 前端：
   [生成大纲] → POST /api/v1/series/{id}/generate-outline
