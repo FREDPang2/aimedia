@@ -16,7 +16,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - KIMI_API_KEY=${KIMI_API_KEY}
       - MINIMAX_API_KEY=${MINIMAX_API_KEY}
-      - KLLING_API_KEY=${KLING_API_KEY}
+      - KLING_API_KEY=${KLING_API_KEY}
     depends_on:
       - redis
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
@@ -55,11 +55,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "4001:80"
-    volumes:
-      - ./src/frontend:/app
-      - /app/node_modules
     environment:
-      - VITE_API_BASE_URL=http://localhost:4000
+      - VITE_API_BASE_URL=http://backend:8000
 
 volumes:
   redis_data:
