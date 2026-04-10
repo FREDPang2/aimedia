@@ -6,8 +6,10 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+import json
+
 from database import get_db
-from models import Project, Series, Episode, VideoTask, TaskStatus
+from models import Project, Series, Episode, VideoTask, TaskStatus, EpisodeStatus
 
 router = APIRouter()
 
@@ -112,3 +114,120 @@ def retry_task(task_id: int, db: Session = Depends(get_db)):
     task.status = TaskStatus.PENDING.value
     db.commit()
     return {"task_id": task_id, "status": "queued"}
+
+
+# ─── Phase 2: 列表 + 触发接口 ───────────────────────────────────────
+
+
+@router.get("/projects")
+def list_projects(db: Session = Depends(get_db)):
+    """列出所有项目（简要信息）"""
+    projects = db.query(Project).order_by(Project.id.desc()).all()
+    return [
+        {"id": p.id, "title": p.title, "status": p.status, "episode_count": p.episode_count}
+        for p in projects
+    ]
+
+
+@router.get("/projects/{project_id}/series")
+def list_series(project_id: int, db: Session = Depends(get_db)):
+    """列出项目下的所有系列"""
+    series_list = db.query(Series).filter(Series.project_id == project_id).order_by(Series.id.desc()).all()
+    return [
+        {"id": s.id, "title": s.title, "status": s.status, "outline": s.outline or ""}
+        for s in series_list
+    ]
+
+
+@router.get("/series/{series_id}/episodes")
+def list_episodes(series_id: int, db: Session = Depends(get_db)):
+    """列出系列下的所有分集"""
+    episodes = db.query(Episode).filter(Episode.series_id == series_id).order_by(Episode.episode_number).all()
+    return [
+        {
+            "id": e.id,
+            "title": e.title or f"第{e.episode_number}集",
+            "status": e.status,
+            "script": e.script or "",
+            "video_path": e.video_path or "",
+            "episode_number": e.episode_number,
+        }
+        for e in episodes
+    ]
+
+
+@router.post("/episodes/{episode_id}/generate-video")
+def trigger_episode_video(episode_id: int, db: Session = Depends(get_db)):
+    """触发指定分集的视频生成（异步）"""
+    episode = db.query(Episode).filter(Episode.id == episode_id).first()
+    if not episode:
+        raise HTTPException(status_code=404, detail="Episode not found")
+    if episode.status not in [EpisodeStatus.SCRIPT_GENERATED.value, EpisodeStatus.VIDEO_COMPLETED.value]:
+        raise HTTPException(status_code=400, detail="Script must be generated before video generation")
+
+    episode.status = EpisodeStatus.VIDEO_GENERATING.value
+    db.commit()
+
+    def generate():
+        try:
+            from database import get_db as _get_db
+            from app.services.video_pipeline import run_pipeline
+            import tempfile
+
+            db2 = next(_get_db())
+            ep = db2.query(Episode).filter(Episode.id == episode_id).first()
+            if not ep or not ep.script:
+                raise ValueError("Episode or script not found")
+
+            output_dir = tempfile.gettempdir()
+            ok, msg, video_path = run_pipeline(
+                episode_id=episode_id,
+                script_json=ep.script,
+                output_dir=output_dir,
+            )
+
+            db3 = next(_get_db())
+            ep2 = db3.query(Episode).filter(Episode.id == episode_id).first()
+            if ep2:
+                if ok:
+                    ep2.video_path = video_path
+                    ep2.status = EpisodeStatus.VIDEO_COMPLETED.value
+                    print(f"[OPENCLAW] Video pipeline complete: {video_path}")
+                else:
+                    ep2.status = EpisodeStatus.VIDEO_FAILED.value
+                    print(f"[OPENCLAW] Video pipeline failed: {msg}")
+                db3.commit()
+            db3.close()
+        except Exception as e:
+            print(f"[OPENCLAW] Video pipeline error: {e}")
+            try:
+                from database import get_db as _get_db
+                db_err = next(_get_db())
+                ep_err = db_err.query(Episode).filter(Episode.id == episode_id).first()
+                if ep_err:
+                    ep_err.status = EpisodeStatus.VIDEO_FAILED.value
+                    db_err.commit()
+                db_err.close()
+            except Exception:
+                pass
+
+    import threading
+    threading.Thread(target=generate, daemon=True).start()
+    return {"episode_id": episode_id, "status": "triggered", "message": "视频生成任务已加入队列"}
+
+
+@router.get("/episodes/{episode_id}")
+def get_episode(episode_id: int, db: Session = Depends(get_db)):
+    """获取分集详情，包括 video_path"""
+    episode = db.query(Episode).filter(Episode.id == episode_id).first()
+    if not episode:
+        raise HTTPException(status_code=404, detail="Episode not found")
+    return {
+        "id": episode.id,
+        "title": episode.title or f"第{episode.episode_number}集",
+        "status": episode.status,
+        "script": episode.script or "",
+        "video_path": episode.video_path or "",
+        "episode_number": episode.episode_number,
+        "description": episode.description or "",
+    }

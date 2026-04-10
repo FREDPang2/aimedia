@@ -143,6 +143,17 @@
             <p class="outline-label">📋 大纲:</p>
             <div class="outline-text">{{ ep.outline }}</div>
           </div>
+
+          <!-- 视频播放器 -->
+          <div v-if="ep.video_path && ep.status === 'video_completed'" class="episode-video">
+            <p class="video-label">🎬 生成的视频:</p>
+            <video
+              :src="ep.video_path"
+              controls
+              width="100%"
+              style="border-radius: 6px; background: #000;"
+            />
+          </div>
         </div>
       </el-card>
     </div>
@@ -191,7 +202,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Loading, ArrowLeft, MoreFilled, Document, VideoPlay, View } from '@element-plus/icons-vue'
@@ -211,15 +222,31 @@ const showCreateDialog = ref(false)
 const showScriptDialog = ref(false)
 const submitting = ref(false)
 const generatingScript = ref(false)
+let pollingTimer = null
 const generatingVideo = ref(false)
 const queueStatus = ref(null)
 const currentEpisodeId = ref(null)
 const currentScript = ref('')
-
 const newEpisode = ref({ title: '', episode_number: 1, description: '' })
 
-const fetchData = async () => {
-  loading.value = true
+const startPolling = () => {
+  stopPolling()
+  pollingTimer = setInterval(() => {
+    fetchData(false)  // silent refresh, don't show loading
+  }, 3000)
+}
+
+const stopPolling = () => {
+  if (pollingTimer) {
+    clearInterval(pollingTimer)
+    pollingTimer = null
+  }
+}
+
+const isGenerating = () => generatingScript.value || generatingVideo.value
+
+const fetchData = async (showLoader = true) => {
+  if (showLoader) loading.value = true
   error.value = ''
   try {
     const series = await api.getSeriesDetail(seriesId)
@@ -229,6 +256,14 @@ const fetchData = async () => {
     const data = await api.getEpisodes(seriesId)
     episodes.value = data || []
 
+    // 自动停止轮询：当所有分集都生成完毕
+    if (!isGenerating()) {
+      const stillGenerating = episodes.value.some(
+        ep => ep.status === 'script_generating' || ep.status === 'video_generating'
+      )
+      if (!stillGenerating) stopPolling()
+    }
+
     // 获取队列状态
     try {
       queueStatus.value = await api.getQueueStatus()
@@ -237,9 +272,10 @@ const fetchData = async () => {
     error.value = '加载失败: ' + err.message
     console.error(err)
   } finally {
-    loading.value = false
+    if (showLoader) loading.value = false
   }
 }
+
 
 const handleCreate = async () => {
   if (!newEpisode.value.title.trim()) {
@@ -268,6 +304,7 @@ const handleGenerateScript = async () => {
       { type: 'info', confirmButtonText: '确定', cancelButtonText: '取消' }
     )
     generatingScript.value = true
+    startPolling()
     // 遍历所有分集生成脚本
     const promises = episodes.value.map(ep =>
       api.generateScript(ep.id).catch(err => ({ error: err.message, id: ep.id }))
@@ -284,6 +321,7 @@ const handleGenerateScript = async () => {
     if (err !== 'cancel') ElMessage.error('生成失败')
   } finally {
     generatingScript.value = false
+    if (!isGenerating()) stopPolling()
   }
 }
 
@@ -295,6 +333,7 @@ const handleGenerateVideo = async () => {
       { type: 'info', confirmButtonText: '确定', cancelButtonText: '取消' }
     )
     generatingVideo.value = true
+    startPolling()
     const promises = episodes.value
       .filter(ep => ep.status === 'script_generated' || ep.status === 'video_generating')
       .map(ep => api.generateVideo(ep.id).catch(() => {}))
@@ -305,6 +344,7 @@ const handleGenerateVideo = async () => {
     if (err !== 'cancel') ElMessage.error('生成失败')
   } finally {
     generatingVideo.value = false
+    if (!isGenerating()) stopPolling()
   }
 }
 
@@ -428,6 +468,7 @@ const getSeriesStatusText = (status) => {
 }
 
 onMounted(fetchData)
+onUnmounted(stopPolling)
 </script>
 
 <style scoped>

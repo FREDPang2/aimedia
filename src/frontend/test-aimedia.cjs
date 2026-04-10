@@ -226,9 +226,15 @@ const episodeTests = [
   ['E4-任务队列概览', async (page) => {
     const ok = await navigateToEpisode(page);
     if (!ok) return { warning: '无数据，跳过' };
+    // 等待队列卡片出现（fetchData 需要时间加载 queueStatus）
     const queue = page.locator('.queue-card');
-    const n = await queue.count();
-    if (n === 0) throw new Error('任务队列概览不存在');
+    try {
+      await queue.waitFor({ timeout: 5000 });
+    } catch {
+      // 截图调试
+      await page.screenshot({ path: './test-screenshots/debug-e4.png' });
+      throw new Error('任务队列概览不存在 (等待超时)');
+    }
   }],
   ['E5-创建分集并提交', async (page) => {
     const ok = await navigateToEpisode(page);
