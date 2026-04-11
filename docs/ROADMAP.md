@@ -171,9 +171,15 @@ AI 生成过程中：
 
 ```
 Phase 1（现在）:
-  [Task 0] 提交 pending changes ✅
-  [Task 1] 视频管线联调 + E2E 验证 ✅
-  [Task 2] 前后端 AI 串联 ✅
+  [Task 0] 提交 pending changes ✅ （2026-04-11 截图已提交并推送）
+  [Task 1] 视频管线联调 + E2E 验证 ✅ （Episode 25 状态更新 video_failed，Kling API Key 未配置属预期）
+  [Task 2] 前后端 AI 串联 ✅ （generateOutline/generateScript/generateVideo 路由与前端绑定正确）
+
+**Phase 1 完成总结**（2026-04-11）:
+- Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
+- 视频管线：generate-video 路由正常，状态流转正确 (script_generated → video_generating → video_failed)
+- AI 按钮绑定：Series.vue 生成大纲 ✅，Episode.vue 生成脚本/视频 ✅
+- 所有截图已提交并推送
 
 Phase 2:
   [Task 3] OpenClaw 控制接口完善 ✅
