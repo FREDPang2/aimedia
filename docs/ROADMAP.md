@@ -32,8 +32,8 @@
 ### 待完成 ⬜
 | 优先级 | 功能 | 状态 |
 |--------|------|------|
-| P0 | **Pending changes 提交** | ✅ 已提交（2026-04-10） |
-| P0 | **完整视频管线联调** | ✅ 已联调（2026-04-10）- Episode 9 验证：route返回200，pipeline运行至Kling（KLING_API_KEY未配置属预期） |
+| P0 | **Pending changes 提交** | ✅ 已提交（2026-04-11）- 18张截图更新并推送 |
+| P0 | **完整视频管线联调** | ✅ 已联调（2026-04-11）- Episode 9 route返回200，status→video_generating→video_failed（Kling缺API Key属预期） |
 | P1 | **OpenClaw 控制接口** | ✅ 已完成（2026-04-10）- /projects, /series, /episodes, /generate-video 接口 |
 | P1 | **前端 AI 生成按钮绑定** | ✅ 已完成（2026-04-10） |
 | P1 | **前端视频播放** | ✅ 已完成（2026-04-10）- video_path 回显 + video 播放器 |
