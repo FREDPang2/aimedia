@@ -178,7 +178,7 @@ def generate_video(episode_id: int, db: Session = Depends(get_db)):
     episode = db.query(Episode).filter(Episode.id == episode_id).first()
     if not episode:
         raise HTTPException(status_code=404, detail="Episode not found")
-    if episode.status not in [EpisodeStatus.SCRIPT_GENERATED.value, EpisodeStatus.VIDEO_COMPLETED.value]:
+    if episode.status not in [EpisodeStatus.SCRIPT_GENERATED.value, EpisodeStatus.VIDEO_COMPLETED.value, EpisodeStatus.VIDEO_FAILED.value]:
         raise HTTPException(status_code=400, detail="Script must be generated before video generation")
     episode.status = EpisodeStatus.VIDEO_GENERATING.value
     db.commit()
