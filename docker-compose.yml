@@ -18,8 +18,10 @@ services:
       - MINIMAX_API_KEY=${MINIMAX_API_KEY}
       - KLING_API_KEY=${KLING_API_KEY}
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
 
   # Redis (Celery Broker)
   redis:
@@ -28,6 +30,12 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
 
   # Celery Worker
   celery:
@@ -44,19 +52,21 @@ services:
       - MINIMAX_API_KEY=${MINIMAX_API_KEY}
       - KLING_API_KEY=${KLING_API_KEY}
     depends_on:
-      - redis
-      - backend
+      redis:
+        condition: service_healthy
     command: celery -A app.celery_app worker --loglevel=info
+    restart: unless-stopped
 
   # Vue3 前端
   frontend:
     build:
       context: ./src/frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=http://backend:8000
     ports:
       - "4001:80"
-    environment:
-      - VITE_API_BASE_URL=http://backend:8000
+    restart: unless-stopped
 
 volumes:
   redis_data:
