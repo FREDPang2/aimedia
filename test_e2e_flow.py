@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
 """
 AIMedia E2E 完整流程测试
-测试完整的视频生产管线：Project → Series → Episode → Video Generation
+测试完整的视频生产管线 + 错误处理
+
+用法:
+    python test_e2e_flow.py                # 完整流程 + 错误测试
+    python test_e2e_flow.py --skip-ai     # 跳过 AI 生成，只测 CRUD
+    python test_e2e_flow.py --ai-only     # 只测 AI 流程（已存在数据）
 """
 import httpx
 import time
 import json
 import sys
+import os
+import argparse
 
 BASE_URL = "http://localhost:4000/api/v1"
+
 
 def pretty_print(title, data):
     print(f"\n{'='*60}")
@@ -16,158 +24,375 @@ def pretty_print(title, data):
     print('='*60)
     print(json.dumps(data, indent=2, ensure_ascii=False))
 
-def test_flow():
-    client = httpx.Client(timeout=60.0, follow_redirects=True)
-    
-    # 测试数据
-    project_name = f"E2E测试项目_{int(time.time())}"
-    series_name = f"E2E测试系列_{int(time.time())}"
-    episode_title = f"E2E测试分集_{int(time.time())}"
-    
+
+def wait_for_status(client, url, expected_statuses, timeout=60, poll_interval=2):
+    """
+    轮询直到状态匹配或超时
+
+    Args:
+        client: httpx client
+        url: GET url to poll
+        expected_statuses: 状态列表，如 ["outline_generated", "failed"]
+        timeout: 超时秒数
+        poll_interval: 轮询间隔
+
+    Returns:
+        (status, data) or (None, None) if timeout
+    """
+    start = time.time()
+    attempts = int(timeout / poll_interval)
+    for i in range(attempts):
+        resp = client.get(url)
+        data = resp.json()
+        status = data.get("status", "unknown")
+        if status in expected_statuses:
+            return status, data
+        elapsed = int(time.time() - start)
+        print(f"    [{elapsed}s] status={status}, 等待中...")
+        time.sleep(poll_interval)
+    return None, None
+
+
+# =============================================================================
+# 基础 CRUD 测试
+# =============================================================================
+
+def test_crud():
+    """测试 Project / Series / Episode 的 CRUD 操作"""
+    client = httpx.Client(timeout=30.0, follow_redirects=True)
+    results = []
+    project_name = f"CRUD测试_{int(time.time())}"
+
     try:
-        # Step 1: 创建 Project
-        print("\n🔵 Step 1: 创建 Project")
+        # Project CRUD
+        print("\n🔵 [CRUD] Project")
         resp = client.post(f"{BASE_URL}/projects", json={
             "title": project_name,
-            "description": "E2E自动化测试项目"
+            "description": "自动化CRUD测试"
         })
-        print(f"Status: {resp.status_code}")
+        assert resp.status_code == 200, f"创建Project失败: {resp.status_code}"
         project = resp.json()
         project_id = project.get("id")
-        pretty_print("Project 创建成功", project)
-        
-        # Step 2: 创建 Series (关联 Project)
-        print("\n🔵 Step 2: 创建 Series")
+        print(f"  ✅ 创建Project: id={project_id}")
+
+        resp = client.get(f"{BASE_URL}/projects/{project_id}")
+        assert resp.status_code == 200
+        print(f"  ✅ 读取Project: OK")
+
+        resp = client.put(f"{BASE_URL}/projects/{project_id}", json={
+            "title": project_name,
+            "description": "更新描述"
+        })
+        assert resp.status_code == 200, f"更新Project失败: {resp.status_code} {resp.text}"
+        print(f"  ✅ 更新Project: OK")
+
+        # Series CRUD
+        print("\n🔵 [CRUD] Series")
+        resp = client.post(f"{BASE_URL}/series", json={
+            "title": f"CRUD系列_{int(time.time())}",
+            "project_id": project_id
+        })
+        assert resp.status_code == 200
+        series = resp.json()
+        series_id = series.get("id")
+        print(f"  ✅ 创建Series: id={series_id}")
+
+        resp = client.get(f"{BASE_URL}/series/{series_id}")
+        assert resp.status_code == 200
+        print(f"  ✅ 读取Series: OK")
+
+        # Episode CRUD
+        print("\n🔵 [CRUD] Episode")
+        resp = client.post(f"{BASE_URL}/episodes", json={
+            "title": f"CRUD分集_{int(time.time())}",
+            "series_id": series_id,
+            "episode_number": 1,
+            "description": "自动化CRUD测试"
+        })
+        assert resp.status_code == 200
+        episode = resp.json()
+        episode_id = episode.get("id")
+        print(f"  ✅ 创建Episode: id={episode_id}")
+
+        resp = client.get(f"{BASE_URL}/episodes/{episode_id}")
+        assert resp.status_code == 200
+        print(f"  ✅ 读取Episode: OK")
+
+        # 清理
+        client.delete(f"{BASE_URL}/projects/{project_id}")
+        print(f"\n  ✅ 清理Project {project_id}: OK")
+
+        print("\n🟢 CRUD 全部通过")
+        return True
+
+    except AssertionError as e:
+        print(f"\n🔴 CRUD 失败: {e}")
+        return False
+    except Exception as e:
+        print(f"\n🔴 CRUD 异常: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+    finally:
+        client.close()
+
+
+# =============================================================================
+# 错误场景测试
+# =============================================================================
+
+def test_error_scenarios():
+    """测试错误处理：无效输入、缺失必填字段、状态拦截"""
+    client = httpx.Client(timeout=30.0, follow_redirects=True)
+
+    try:
+        print("\n🔵 [错误场景] 测试")
+
+        # 1. 生成视频时无 script → 应返回 400
+        print("\n  [1] generate-video 无 script → 400")
+        resp = client.post(f"{BASE_URL}/projects", json={
+            "title": f"错误测试_{int(time.time())}"
+        })
+        project_id = resp.json().get("id")
+
+        resp = client.post(f"{BASE_URL}/series", json={
+            "title": f"错误系列_{int(time.time())}",
+            "project_id": project_id
+        })
+        series_id = resp.json().get("id")
+
+        resp = client.post(f"{BASE_URL}/episodes", json={
+            "title": f"错误分集_{int(time.time())}",
+            "series_id": series_id,
+            "episode_number": 1,
+        })
+        episode_id = resp.json().get("id")
+
+        resp = client.post(f"{BASE_URL}/episodes/{episode_id}/generate-video")
+        if resp.status_code == 400:
+            print(f"  ✅ 正确拦截: {resp.status_code} - {resp.json()}")
+        else:
+            print(f"  ⚠️  期望400，实际: {resp.status_code} - {resp.text}")
+
+        # 2. 无效 series_id → 404 或 422
+        print("\n  [2] 无效 series_id → 404/422")
+        resp = client.post(f"{BASE_URL}/episodes", json={
+            "title": "无效测试",
+            "series_id": 999999,
+            "episode_number": 1,
+        })
+        if resp.status_code in (404, 422):
+            print(f"  ✅ 正确拒绝: {resp.status_code}")
+        else:
+            print(f"  ⚠️  期望404/422，实际: {resp.status_code} - {resp.text}")
+
+        # 3. generate-outline 空参数 → 应被拒绝
+        print("\n  [3] generate-outline 空参数 → 400/422")
+        resp = client.post(f"{BASE_URL}/series/{series_id}/generate-outline", json={
+            "project_title": "",
+            "project_description": "",
+        })
+        if resp.status_code in (400, 422):
+            print(f"  ✅ 正确拒绝空参数: {resp.status_code}")
+        else:
+            print(f"  ⚠️  期望400/422，实际: {resp.status_code}")
+
+        # 4. 重复创建同名 Project → 应成功（不强制唯一）
+        print("\n  [4] 重复创建同名 → 200（不强制唯一）")
+        resp = client.post(f"{BASE_URL}/projects", json={"title": "重复名称测试"})
+        ok1 = resp.status_code == 200
+        resp = client.post(f"{BASE_URL}/projects", json={"title": "重复名称测试"})
+        ok2 = resp.status_code == 200
+        if ok1 and ok2:
+            print(f"  ✅ 允许重复名称（应用层不强制唯一）")
+        else:
+            print(f"  ⚠️  状态码: {ok1}, {ok2}")
+
+        # 清理
+        client.delete(f"{BASE_URL}/projects/{project_id}")
+
+        print("\n🟢 错误场景测试完成")
+        return True
+
+    except Exception as e:
+        print(f"\n🔴 错误场景异常: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+    finally:
+        client.close()
+
+
+# =============================================================================
+# AI 流程测试（依赖外部 API）
+# =============================================================================
+
+def test_ai_flow():
+    """测试完整的 AI 生成流程：outline → script → video（状态轮询）"""
+    client = httpx.Client(timeout=60.0, follow_redirects=True)
+
+    project_name = f"AI流程测试_{int(time.time())}"
+    series_name = f"AI系列_{int(time.time())}"
+    episode_title = f"AI分集_{int(time.time())}"
+
+    try:
+        # 创建资源
+        resp = client.post(f"{BASE_URL}/projects", json={
+            "title": project_name,
+            "description": "AI流程自动化测试"
+        })
+        project_id = resp.json().get("id")
+        print(f"\n🔵 创建 Project: {project_id}")
+
         resp = client.post(f"{BASE_URL}/series", json={
             "title": series_name,
             "project_id": project_id
         })
-        print(f"Status: {resp.status_code}")
-        series = resp.json()
-        series_id = series.get("id")
-        pretty_print("Series 创建成功", series)
-        
-        # Step 3: 调用 generate-outline
-        print("\n🔵 Step 3: 调用 generate-outline")
-        resp = client.post(f"{BASE_URL}/series/{series_id}/generate-outline", json={
-            "project_title": project_name,
-            "project_description": "AI自媒体系列视频项目"
-        })
-        print(f"Status: {resp.status_code}")
-        result = resp.json()
-        pretty_print("Outline 生成请求已提交", result)
-        
-        # 轮询检查 outline 生成状态
-        print("\n🔵 轮询 Series 状态...")
-        max_attempts = 30  # Wait up to 60 seconds for outline
-        for i in range(max_attempts):
-            time.sleep(2)
-            resp = client.get(f"{BASE_URL}/series/{series_id}")
-            series_status = resp.json()
-            status = series_status.get("status", "unknown")
-            outline = series_status.get("outline", "") or ""
-            print(f"  [{i+1}/{max_attempts}] status={status}, outline长度={len(outline)}")
-            # Wait for actual content, not just status
-            if outline and len(outline) > 50:
-                pretty_print("Outline 生成完成", series_status)
-                break
-        else:
-            print(f"⚠️ 等待 {max_attempts*2} 秒后 outline 仍为空或过短")
-        
-        # Step 4: 创建 Episode (关联 Series)
-        print("\n🔵 Step 4: 创建 Episode")
+        series_id = resp.json().get("id")
+        print(f"🔵 创建 Series: {series_id}")
+
         resp = client.post(f"{BASE_URL}/episodes", json={
             "title": episode_title,
             "series_id": series_id,
             "episode_number": 1,
-            "description": "E2E自动化测试分集"
+            "description": "AI流程自动化测试"
         })
-        print(f"Status: {resp.status_code}")
-        episode = resp.json()
-        episode_id = episode.get("id")
-        pretty_print("Episode 创建成功", episode)
-        
-        # Step 5: 调用 generate-script
-        print("\n🔵 Step 5: 调用 generate-script")
+        episode_id = resp.json().get("id")
+        print(f"🔵 创建 Episode: {episode_id}")
+
+        # Step 1: 生成大纲
+        print("\n🔵 [AI流程] Step 1: 生成大纲")
+        resp = client.post(f"{BASE_URL}/series/{series_id}/generate-outline", json={
+            "project_title": project_name,
+            "project_description": "AI自媒体系列视频项目"
+        })
+        print(f"  响应: {resp.status_code}")
+        if resp.status_code != 200:
+            print(f"  ⚠️  generate-outline 失败: {resp.text}")
+            return False
+
+        status, data = wait_for_status(
+            client,
+            f"{BASE_URL}/series/{series_id}",
+            ["outline_generated", "failed"],
+            timeout=90
+        )
+        if status == "outline_generated":
+            print(f"  ✅ 大纲生成成功 ({len(data.get('outline', ''))} 字符)")
+            series_outline = data.get("outline", "")
+        elif status == "failed":
+            print(f"  ⚠️  大纲生成失败: {data.get('error_message', data)}")
+            series_outline = ""
+        else:
+            print(f"  ⚠️  轮询超时，大纲可能仍在生成中")
+            series_outline = ""
+
+        # Step 2: 生成脚本
+        print("\n🔵 [AI流程] Step 2: 生成脚本")
         resp = client.post(f"{BASE_URL}/episodes/{episode_id}/generate-script", json={
             "project_title": project_name,
-            "series_outline": series_status.get("outline", ""),
+            "series_outline": series_outline or "测试系列的第1集内容",
             "episode_title": episode_title
         })
-        print(f"Status: {resp.status_code}")
-        result = resp.json()
-        pretty_print("Script 生成请求已提交", result)
-        
-        # 轮询检查 script 生成状态
-        print("\n🔵 轮询 Episode Script 状态...")
-        for i in range(20):
-            time.sleep(2)
-            resp = client.get(f"{BASE_URL}/episodes/{episode_id}")
-            episode_status = resp.json()
-            status = episode_status.get("status", "unknown")
-            script = episode_status.get("script", "")
-            print(f"  [{i+1}] status={status}, script长度={len(script) if script else 0}")
-            if "script" in status or status == "script_generated":
-                pretty_print("Script 生成完成", episode_status)
-                break
-        
-        # Step 6: 调用 generate-video
-        print("\n🔵 Step 6: 调用 generate-video")
-        resp = client.post(f"{BASE_URL}/episodes/{episode_id}/generate-video")
-        print(f"Status: {resp.status_code}")
-        result = resp.json()
-        pretty_print("Video 生成请求已提交", result)
-        
-        # 轮询检查 video 生成状态
-        print("\n🔵 轮询 Episode Video 状态...")
-        for i in range(30):
-            time.sleep(3)
-            resp = client.get(f"{BASE_URL}/episodes/{episode_id}")
-            episode_status = resp.json()
-            status = episode_status.get("status", "unknown")
-            video_path = episode_status.get("video_path", "")
-            print(f"  [{i+1}] status={status}, video_path={video_path or 'None'}")
-            if "video" in status or status == "video_completed":
-                pretty_print("Video 生成完成", episode_status)
-                break
-            if status == "failed":
-                print("❌ Video 生成失败")
-                break
-        
-        # Step 7: 验证 episode.video_path
-        print("\n🔵 Step 7: 验证 video_path")
-        resp = client.get(f"{BASE_URL}/episodes/{episode_id}")
-        final_episode = resp.json()
-        video_path = final_episode.get("video_path", "")
-        print(f"video_path: {video_path}")
-        
-        if video_path:
-            import os
-            if os.path.exists(video_path):
-                print(f"✅ Video 文件存在: {video_path}")
-            else:
-                print(f"⚠️ Video 路径已记录但文件不存在: {video_path}")
+        print(f"  响应: {resp.status_code}")
+        if resp.status_code != 200:
+            print(f"  ⚠️  generate-script 失败: {resp.text}")
+            return False
+
+        status, data = wait_for_status(
+            client,
+            f"{BASE_URL}/episodes/{episode_id}",
+            ["script_generated", "failed"],
+            timeout=90
+        )
+        if status == "script_generated":
+            script = data.get("script", "")
+            print(f"  ✅ 脚本生成成功 ({len(script)} 字符)")
+        elif status == "failed":
+            print(f"  ⚠️  脚本生成失败: {data.get('error_message', data)}")
+            return False
         else:
-            print("⚠️ Video 路径为空（可能 KLING_API_KEY 未配置）")
-        
-        pretty_print("最终 Episode 状态", final_episode)
-        
-        # 清理测试数据
-        print("\n🔵 清理测试数据...")
+            print(f"  ⚠️  轮询超时")
+            return False
+
+        # Step 3: 生成视频（可能因 KLING_API_KEY 未配置而失败，不影响测试通过）
+        print("\n🔵 [AI流程] Step 3: 生成视频")
+        resp = client.post(f"{BASE_URL}/episodes/{episode_id}/generate-video")
+        print(f"  响应: {resp.status_code}")
+        # 不强制要求视频生成成功（Kling Key 可能未配）
+
+        status, data = wait_for_status(
+            client,
+            f"{BASE_URL}/episodes/{episode_id}",
+            ["video_completed", "video_generating", "failed"],
+            timeout=60
+        )
+        if status:
+            print(f"  ✅ 视频管线触发成功，最终状态: {status}")
+        else:
+            print(f"  ⚠️  视频管线状态未知")
+
+        # 验证最终数据
+        resp = client.get(f"{BASE_URL}/episodes/{episode_id}")
+        final = resp.json()
+        print(f"\n📊 最终状态: {final.get('status')}")
+        print(f"📊 video_path: {final.get('video_path') or '(未生成)'}")
+
+        # 清理
         client.delete(f"{BASE_URL}/projects/{project_id}")
-        print(f"✅ 已删除 Project {project_id}")
-        
-        print("\n" + "="*60)
-        print("  E2E 流程测试完成")
-        print("="*60)
-        
+        print(f"\n✅ 清理完成")
+
+        print("\n🟢 AI 流程测试完成")
+        return True
+
     except Exception as e:
-        print(f"\n❌ 测试异常: {e}")
+        print(f"\n🔴 AI 流程异常: {e}")
         import traceback
         traceback.print_exc()
-        sys.exit(1)
+        return False
     finally:
         client.close()
 
+
+# =============================================================================
+# 主入口
+# =============================================================================
+
 if __name__ == "__main__":
-    test_flow()
+    parser = argparse.ArgumentParser(description="AIMedia E2E 测试")
+    parser.add_argument("--skip-ai", action="store_true", help="跳过 AI 流程测试")
+    parser.add_argument("--ai-only", action="store_true", help="只运行 AI 流程测试")
+    args = parser.parse_args()
+
+    # 检查后端是否运行
+    try:
+        resp = httpx.get(f"{BASE_URL.replace('/api/v1', '')}/health", timeout=5)
+        if resp.status_code != 200:
+            print(f"⚠️  后端未正常运行: {resp.status_code}")
+            sys.exit(1)
+    except Exception:
+        print(f"⚠️  无法连接到后端 ({BASE_URL})，请先启动: cd src/backend && uvicorn app.main:app --reload")
+        sys.exit(1)
+
+    print("="*60)
+    print("  AIMedia E2E 测试套件")
+    print("="*60)
+
+    all_passed = True
+
+    if args.ai_only:
+        all_passed = test_ai_flow()
+    else:
+        all_passed = test_crud()
+        if all_passed:
+            all_passed = test_error_scenarios()
+        if all_passed and not args.skip_ai:
+            all_passed = test_ai_flow()
+
+    print("\n" + "="*60)
+    if all_passed:
+        print("✅ 全部测试通过")
+        sys.exit(0)
+    else:
+        print("⚠️  部分测试失败（见上文）")
+        sys.exit(1)

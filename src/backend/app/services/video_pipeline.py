@@ -23,6 +23,38 @@ from . import kling
 from . import video_compose
 
 
+def _generate_silent_audio(output_path: str, duration: float = 5.0) -> tuple[bool, str]:
+    """
+    生成静音音频文件（用于 TTS 降级）
+
+    Args:
+        output_path: 输出路径 (.mp3)
+        duration: 时长（秒）
+
+    Returns:
+        (success, path)
+    """
+    import subprocess
+    os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+    ffmpeg_bin = video_compose.get_ffmpeg_binary()
+    cmd = [
+        ffmpeg_bin, "-y",
+        "-f", "lavfi",
+        "-i", f"anullsrc=r=32000:cl=mono",
+        "-t", str(duration),
+        "-acodec", "libmp3lame",
+        "-q:a", "9",
+        output_path,
+    ]
+    try:
+        result = subprocess.run(cmd, capture_output=True, timeout=30)
+        if result.returncode == 0 and os.path.exists(output_path):
+            return True, output_path
+    except Exception:
+        pass
+    return False, ""
+
+
 # =============================================================================
 # 1. 脚本解析
 # =============================================================================
@@ -166,6 +198,8 @@ def generate_all_voices(
     """
     为所有场景生成配音，返回音频文件列表
 
+    降级策略: TTS 失败后生成静音文件替代，保留场景顺序
+
     Returns:
         (success, message, audio_paths)
     """
@@ -175,12 +209,26 @@ def generate_all_voices(
     for i, scene in enumerate(scenes):
         text = scene["text"]
         audio_path = os.path.join(output_dir, f"voice_{i:03d}.mp3")
+        duration = scene.get("duration", 5)
 
         ok, msg = generate_voice_for_scene(text, audio_path, voice=voice)
         if not ok:
-            return False, f"场景 {i} 配音失败: {msg}", []
-        audio_paths.append(audio_path)
-        print(f"  [TTS] 场景 {i}: {text[:30]}... → {audio_path}")
+            # TTS 失败降级：生成静音文件，保持管线继续
+            print(f"  [TTS] 场景 {i} 失败 ({msg})，生成静音替代...")
+            ok_silent, silent_path = _generate_silent_audio(audio_path, duration=duration)
+            if ok_silent:
+                audio_paths.append(silent_path)
+                print(f"  [TTS] 场景 {i} 静音替代: {silent_path}")
+            else:
+                # 静音也失败，创建一个占位空文件
+                import tempfile
+                import shutil
+                placeholder = os.path.join(output_dir, f"voice_{i:03d}_silent.mp3")
+                shutil.copy(silent_path if ok_silent else "/dev/null", placeholder)
+                audio_paths.append(placeholder)
+        else:
+            audio_paths.append(audio_path)
+            print(f"  [TTS] 场景 {i}: {text[:30]}... → {audio_path}")
 
     return True, "", audio_paths
 
@@ -226,9 +274,10 @@ def generate_all_video_clips(
     output_dir: str,
     aspect_ratio: str = "16:9",
     model: str = "c1",
+    max_retries: int = 3,
 ) -> tuple[bool, str, list[str]]:
     """
-    为所有场景生成视频片段
+    为所有场景生成视频片段（每个片段最多重试 max_retries 次）
 
     Returns:
         (success, message, video_paths)
@@ -241,16 +290,23 @@ def generate_all_video_clips(
         duration = scene.get("duration", 5)
         clip_path = os.path.join(output_dir, f"clip_{i:03d}.mp4")
 
-        print(f"  [Kling] 场景 {i} ({duration}s): {prompt[:50]}...")
-        ok, msg = generate_video_clip(
-            prompt=prompt,
-            output_path=clip_path,
-            aspect_ratio=aspect_ratio,
-            duration=duration,
-            model=model,
-        )
+        # 重试逻辑
+        ok, msg = False, ""
+        for attempt in range(1, max_retries + 1):
+            print(f"  [Kling] 场景 {i} ({duration}s) [尝试 {attempt}/{max_retries}]: {prompt[:50]}...")
+            ok, msg = generate_video_clip(
+                prompt=prompt,
+                output_path=clip_path,
+                aspect_ratio=aspect_ratio,
+                duration=duration,
+                model=model,
+            )
+            if ok:
+                break
+            print(f"  [Kling] 场景 {i} 失败: {msg}，{'重试...' if attempt < max_retries else '放弃'}")
+
         if not ok:
-            return False, f"场景 {i} 视频生成失败: {msg}", []
+            return False, f"场景 {i} 视频生成失败（已重试 {max_retries} 次）: {msg}", []
         video_paths.append(clip_path)
         print(f"  [Kling] 场景 {i} 完成: {clip_path}")
 

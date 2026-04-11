@@ -2,14 +2,33 @@
 AIMedia FastAPI 应用入口
 """
 
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import init_database
 from app.routers import projects, series, episodes, openclaw, tasks
 
+
+def _check_api_keys():
+    """启动时检查关键 API Key，未配置时打印警告（不影响启动）"""
+    warnings = []
+    if not os.environ.get("MOONSHOT_API_KEY"):
+        warnings.append("⚠️  MOONSHOT_API_KEY 未设置 — AI 大纲/脚本生成将失败")
+    if not os.environ.get("KLING_API_KEY"):
+        warnings.append("⚠️  KLING_API_KEY 未设置 — 视频生成将失败")
+    if not os.environ.get("MINIMAX_API_KEY"):
+        warnings.append("⚠️  MINIMAX_API_KEY 未设置 — TTS 配音生成将失败")
+    for w in warnings:
+        print(w)
+    return warnings
+
+
 # 初始化数据库
 init_database()
+
+# 启动时检查配置
+_check_api_keys()
 
 # 创建 FastAPI 应用
 app = FastAPI(
