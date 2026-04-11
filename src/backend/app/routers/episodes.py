@@ -29,6 +29,7 @@ class EpisodeUpdate(BaseModel):
     outline: str = ""
     script: str = ""
     storyboard: str = ""
+    status: str = ""
 
 
 def _episode_to_response(ep: Episode) -> dict:
@@ -93,11 +94,15 @@ def update_episode(episode_id: int, update: EpisodeUpdate, db: Session = Depends
     episode.description = update.description
     if update.outline is not None:
         episode.outline = update.outline
-    if update.script is not None:
+    if update.script:
         episode.script = update.script
     if update.storyboard is not None:
         episode.storyboard = update.storyboard
+    if update.status:
+        episode.status = update.status
     db.commit()
+    db.refresh(episode)
+    return _episode_to_response(episode)
     db.refresh(episode)
     return _episode_to_response(episode)
 
