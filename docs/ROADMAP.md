@@ -41,8 +41,8 @@
 | P2 | **E2E 完整流程测试** | ✅ 基础验证（2026-04-10）- CRUD routes工作正常，AI generation需代理，video generation正确拦截无script请求 |
 | P2 | **错误处理完善** | 🔄 基础完成（2026-04-10）- pipeline有try/except，Kling重试3次逻辑待实现 |
 | P2 | **配置文件管理** | ⬜ 待开发 - API Keys / 代理配置页面 |
-| P3 | **Docker 部署** | 🔄 进行中 (2026-04-10) - frontend Dockerfile + nginx.conf 已创建，compose typo 已修复 |
-| P3 | **文档完善** | ⬜ 待开发 - API 文档 / 用户指南 |
+| P3 | **Docker 部署** | ✅ 已完成（2026-04-11）- VITE_API_BASE_URL 构建时配置，Redis healthcheck，depends_on 条件等待 |
+| P3 | **文档完善** | 🔄 进行中 - README / 快速开始指南 |
 
 ---
 
@@ -184,8 +184,8 @@ Phase 3:
   [Task 7] 错误处理 ✅
 
 Phase 4:
-  [Task 8] Docker 部署
-  [Task 9] 文档
+  [Task 8] Docker 部署 ✅ （2026-04-11）- VITE_API_BASE_URL 可配置，Redis 健康检查，compose 重启策略
+  [Task 9] 文档 🔄 进行中 - README / 快速开始指南
 ```
 
 ---
