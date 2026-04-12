@@ -204,6 +204,11 @@ Phase 1（现在）:
 - git status 干净
 - Phase 1 全部任务持续验证通过
 
+**Phase 1 日常验证**（2026-04-12，19:45 cron）：
+- Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
+- git status 干净
+- Phase 1 全部任务持续验证通过
+
 Phase 2:
   [Task 3] OpenClaw 控制接口完善 ✅
   [Task 4] 前端视频播放 ✅
