@@ -183,6 +183,15 @@ Phase 1（现在）:
 - 后端/前端服务正常启动
 - git push 成功
 
+**Phase 1 补充验证**（2026-04-12，12:11 cron）：
+- `.gitignore` 更新：忽略 `src/frontend/public/materials/`（视频管线生成物）→ commit `06e0063`
+- 视频管线联调验证：Episode 25 `generate-video` → TTS ✅ → Kling 重试 3 次正确失败 ✅ → status → `video_failed`（KLING_API_KEY 未配置属预期）
+- series router `generate-outline` 路由存在（line 101）✅
+- 前端 API 绑定：`generateOutline` → `/series/${id}/generate-outline` ✅，`generateScript` → `/episodes/${id}/generate-script` ✅，`generateVideo` → `/episodes/${id}/generate-video` ✅
+- Playwright 测试全通：基础 22/22 ✅ 深度 10/10 ✅
+- 截图更新 → commit `c691d82`
+- git push 成功
+
 Phase 2:
   [Task 3] OpenClaw 控制接口完善 ✅
   [Task 4] 前端视频播放 ✅
