@@ -192,6 +192,12 @@ Phase 1（现在）:
 - 截图更新 → commit `c691d82`
 - git push 成功
 
+**Phase 1 日常验证**（2026-04-12，13:18 cron）：
+- 本地开发环境测试：后端 `localhost:4000` + 前端 `localhost:5173`
+- Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅（本地端口临时适配）
+- 截图更新 22 张 → commit `e0adec2`
+- git push 成功
+
 Phase 2:
   [Task 3] OpenClaw 控制接口完善 ✅
   [Task 4] 前端视频播放 ✅
