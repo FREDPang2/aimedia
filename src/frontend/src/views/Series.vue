@@ -245,7 +245,7 @@ const handleCommand = async (cmd, s) => {
     showEditDialog.value = true
   } else if (cmd === 'outline') {
     try {
-      await ElMessageBox.confirm(`为系列「${s.title}」生成 AI 大纲？`, '生成大纲', { type: 'info' })
+      await ElMessageBox.confirm(`为系列「${s.title}」生成 AI 大纲？`, '生成大纲', { type: 'info', confirmButtonText: '确定', cancelButtonText: '取消' })
       generatingOutline.value = true
       await api.generateOutline(s.id)
       ElMessage.success('大纲生成任务已提交')
@@ -257,7 +257,7 @@ const handleCommand = async (cmd, s) => {
     }
   } else if (cmd === 'delete') {
     try {
-      await ElMessageBox.confirm(`确定删除系列「${s.title}」吗？`, '确认删除', { type: 'warning' })
+      await ElMessageBox.confirm(`确定删除系列「${s.title}」吗？`, '确认删除', { type: 'warning', confirmButtonText: '确定', cancelButtonText: '取消' })
       // 调用 deleteSeries 如果有的话，或者标记删除
       ElMessage.success('删除成功（实际删除需要后端支持）')
       fetchData()

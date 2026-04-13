@@ -373,7 +373,7 @@ const handleCommand = async (cmd, ep) => {
     showScriptDialog.value = true
   } else if (cmd === 'delete') {
     try {
-      await ElMessageBox.confirm(`确定删除「${ep.title}」吗？`, '确认删除', { type: 'warning' })
+      await ElMessageBox.confirm(`确定删除「${ep.title}」吗？`, '确认删除', { type: 'warning', confirmButtonText: '确定', cancelButtonText: '取消' })
       ElMessage.success('删除成功')
       fetchData()
     } catch (err) {
