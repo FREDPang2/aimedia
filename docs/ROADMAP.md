@@ -221,6 +221,11 @@ Phase 1（现在）:
 - 截图更新 27 张 → commit `c9d2e57`
 - git push 成功
 
+**Phase 1 日常验证**（2026-04-13，22:43 cron）：
+- Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
+- bugfix: Episode.vue `ElMessageBox.confirm` 缺少显式中文按钮文本（`confirmButtonText`/`cancelButtonText`），导致 deep test F 超时
+- 修复后 commit `58b8cc9` → git push 成功
+
 Phase 2:
   [Task 3] OpenClaw 控制接口完善 ✅
   [Task 4] 前端视频播放 ✅
