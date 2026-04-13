@@ -7,7 +7,7 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 
-const BASE_URL = 'http://localhost:4001';
+const BASE_URL = 'http://localhost:5173';
 const SCREENSHOT_DIR = './test-screenshots';
 const SCREENSHOT_MODE = process.env.SCREENSHOT !== '0';
 const testModule = process.argv[2] || 'all';
