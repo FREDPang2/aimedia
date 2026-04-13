@@ -215,6 +215,12 @@ Phase 1（现在）:
 - 后端/前端服务正常启动
 - git push 成功
 
+**Phase 1 日常验证**（2026-04-13，21:39 cron）：
+- 后端/前端服务重启后正常启动（`python3 -m uvicorn` ✅，`vite` ✅）
+- Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
+- 截图更新 27 张 → commit `c9d2e57`
+- git push 成功
+
 Phase 2:
   [Task 3] OpenClaw 控制接口完善 ✅
   [Task 4] 前端视频播放 ✅
