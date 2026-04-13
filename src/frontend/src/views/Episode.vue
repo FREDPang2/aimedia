@@ -351,7 +351,7 @@ const handleGenerateVideo = async () => {
 const handleCommand = async (cmd, ep) => {
   if (cmd === 'generate-script') {
     try {
-      await ElMessageBox.confirm(`为「${ep.title}」生成脚本？`, '生成脚本', { type: 'info' })
+      await ElMessageBox.confirm(`为「${ep.title}」生成脚本？`, '生成脚本', { type: 'info', confirmButtonText: '确定', cancelButtonText: '取消' })
       await api.generateScript(ep.id)
       ElMessage.success('脚本生成任务已提交')
       fetchData()
@@ -360,7 +360,7 @@ const handleCommand = async (cmd, ep) => {
     }
   } else if (cmd === 'generate-video') {
     try {
-      await ElMessageBox.confirm(`为「${ep.title}」生成视频？`, '生成视频', { type: 'info' })
+      await ElMessageBox.confirm(`为「${ep.title}」生成视频？`, '生成视频', { type: 'info', confirmButtonText: '确定', cancelButtonText: '取消' })
       await api.generateVideo(ep.id)
       ElMessage.success('视频生成任务已提交')
       fetchData()
