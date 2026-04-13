@@ -209,6 +209,12 @@ Phase 1（现在）:
 - git status 干净
 - Phase 1 全部任务持续验证通过
 
+**Phase 1 日常验证**（2026-04-13，17:20 cron）：
+- 截图 25 张更新 → commit `721a9d8`
+- Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
+- 后端/前端服务正常启动
+- git push 成功
+
 Phase 2:
   [Task 3] OpenClaw 控制接口完善 ✅
   [Task 4] 前端视频播放 ✅
