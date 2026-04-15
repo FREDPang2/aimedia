@@ -244,6 +244,12 @@ Phase 1（现在）:
 - test-deep.cjs 修复 commit `5fde134`
 - ⚠️ git push 卡住（网络不通/Clash Verge 未运行），本地 commit 已保存
 
+**Phase 1 日常验证**（2026-04-15，19:51 cron）：
+- 后端/前端服务重启后正常启动（`uvicorn` ✅，`vite` ✅）
+- Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
+- 截图更新 26 张 → commit `79b4163`
+- git push 成功（4 commits 推送至 origin/master）
+
 Phase 2:
   [Task 3] OpenClaw 控制接口完善 ✅
   [Task 4] 前端视频播放 ✅
