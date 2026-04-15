@@ -198,9 +198,8 @@ const deepTests = [
     // 应该出现确认对话框
     const confirmBox = await page.locator('.el-message-box').isVisible();
     if (!confirmBox) throw new Error('确认对话框未出现');
-    // 取消
-    const cancelBtn = page.locator('.el-message-box__btn').filter({ hasText: '取消' });
-    await cancelBtn.click();
+    // 取消：用 Escape 键更可靠
+    await page.keyboard.press('Escape');
     await sleep(300);
   }],
 
