@@ -370,10 +370,11 @@ Phase 4:
 - git push 成功（origin/master）
 - Phase 1 全部任务持续验证通过
 
-**Phase 1 日常验证**（2026-04-17，05:48 cron）：
-- 后端/前端服务正常启动（`uvicorn` ✅，`vite` ✅）
+**Phase 1 日常验证**（2026-04-17，06:50 cron）：
+- 后端 API：`GET /api/v1/projects` → 200 ✅
 - Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
-- git push 成功（推送积压的 3 commits 至 origin/master: `a86ea2b` → `02b0fd8`）
+- 截图更新 20 张 → commit `6df75d0`
+- git push 成功（origin/master）
 - Phase 1 全部任务持续验证通过
 
 ---
