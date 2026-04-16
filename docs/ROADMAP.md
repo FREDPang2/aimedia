@@ -375,7 +375,7 @@ Phase 4:
 - Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
 - 截图更新 22 张 → commit `1b3c509`
 - ⚠️ git push 卡住（Clash Verge 代理未运行，GitHub 访问不通）
-- 本地 commit 已保存，网络恢复后可 push
+- 本地 commit 已保存（2 commits pending: `1b3c509` + `b358e40`），网络恢复后可 push
 
 ---
 
