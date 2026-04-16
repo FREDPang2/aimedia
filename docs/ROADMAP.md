@@ -370,6 +370,13 @@ Phase 4:
 - git push 成功（origin/master）
 - Phase 1 全部任务持续验证通过
 
+**Phase 1 日常验证**（2026-04-17，04:40 cron）：
+- 后端 API：`GET /api/v1/projects` → 200 ✅
+- Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
+- 截图更新 22 张 → commit `1b3c509`
+- ⚠️ git push 卡住（Clash Verge 代理未运行，GitHub 访问不通）
+- 本地 commit 已保存，网络恢复后可 push
+
 ---
 
 ## 六、当前_pending 的未完成事项
