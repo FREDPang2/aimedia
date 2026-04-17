@@ -434,3 +434,10 @@ Phase 4:
 - 截图更新 22 张 → commit `4044895`
 - ⚠️ git push 超时（网络不稳定，本地 commit 已保存）
 - Phase 1 全部任务持续验证通过
+
+**Phase 1 日常验证**（2026-04-17，18:38 cron）：
+- 后端 API：`GET /api/v1/projects` → 200 ✅
+- Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
+- 截图更新 22 张 → commit `f7ee384`
+- git push 成功（origin/master）
+- Phase 1 全部任务持续验证通过
