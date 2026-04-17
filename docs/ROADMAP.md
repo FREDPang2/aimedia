@@ -413,3 +413,9 @@ Phase 4:
 - 截图更新 24 张 → commit `04fd12b`
 - git push 成功（origin/master）
 - Phase 1 全部任务持续验证通过
+
+**Phase 1 日常验证**（2026-04-17，14:18 cron）：
+- 后端 API：`GET /api/v1/projects` → 200 ✅
+- Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
+- git status 干净（无 pending changes）
+- Phase 1 全部任务持续验证通过
