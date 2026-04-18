@@ -494,3 +494,11 @@ Phase 4:
 - 截图更新 22 张 → commit `806e3a3`
 - git push 成功（origin/master）
 - Phase 1 全部任务持续验证通过
+
+**Phase 1 日常验证**（2026-04-19，01:57 cron）：
+- 后端 API：`GET /api/v1/projects` → 200 ✅
+- 前端服务正常（vite ✅）
+- Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
+- ROADMAP 更新 → commit `1be88ca`
+- git push 成功（origin/master）
+- Phase 1 全部任务持续验证通过
