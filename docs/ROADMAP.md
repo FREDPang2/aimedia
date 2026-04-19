@@ -620,3 +620,13 @@ Phase 4:
 - 截图更新 22 张 → commit `9b46fef`
 - git push 成功（origin/master）
 - Phase 1 全部任务持续验证通过
+
+**Phase 1 日常验证**（2026-04-19，19:05 cron）：
+- 后端 API：`GET /api/v1/projects` → 200 ✅
+- 后端服务正常（uvicorn ✅，进程 31331）
+- 前端服务正常（vite ✅，进程 31354）
+- Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
+- 截图更新 18 张 → commit `b616dde`
+- deep test 截图 18 张 → commit `353821b`
+- git push 成功（origin/master）
+- Phase 1 全部任务持续验证通过
