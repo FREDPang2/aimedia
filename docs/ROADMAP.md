@@ -658,3 +658,12 @@ Phase 4:
 - 基础测试截图 21 张 → commit `1508558`
 - git push 成功（origin/master）
 - Phase 1 全部任务持续验证通过
+
+
+**Phase 1 日常验证**（2026-04-19，23:18 cron）：
+- 后端服务宕机 → 重启后正常（uvicorn ✅）
+- 前端服务宕机 → 重启后正常（vite ✅）
+- Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
+- 截图更新 24 张 → commit `2b1b93d`
+- git push 成功（origin/master）
+- Phase 1 全部任务持续验证通过
