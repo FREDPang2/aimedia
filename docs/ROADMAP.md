@@ -566,3 +566,12 @@ Phase 4:
 - ⚠️ git push 卡住（网络不可达，Clash Verge 未运行）
 - 本地 commit 已保存，网络恢复后可 push
 - Phase 1 全部任务持续验证通过
+
+**Phase 1 日常验证**（2026-04-19，11:35 cron）：
+- 后端服务宕机 → 重启后正常（uvicorn ✅，进程 8122）
+- 前端服务正常（vite ✅，进程 8133）
+- Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
+- 截图更新 23 张 → commit `32e2821`
+- ⚠️ git push 超时（Clash Verge 代理未运行，GitHub 访问不通）
+- 本地 commit 已保存，网络恢复后可 push
+- Phase 1 全部任务持续验证通过
