@@ -638,4 +638,13 @@ Phase 4:
 - Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
 - 截图更新 25 张 → commit `e07097f`
 - git push 成功（origin/master）
+
+**Phase 1 日常验证**（2026-04-19，21:07 cron）：
+- 后端 API：`GET /api/v1/projects` → 200 ✅
+- 后端服务正常（uvicorn ✅，进程 31330/31331）
+- 前端服务正常（vite ✅，进程 31340/31341/31353/31354）
+- Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
+- 截图更新 23 张 → commit `fba392a`
+- ⚠️ git push 超时（网络不可达，Clash Verge 未运行）
+- 本地 commit 已保存，网络恢复后可 push
 - Phase 1 全部任务持续验证通过
