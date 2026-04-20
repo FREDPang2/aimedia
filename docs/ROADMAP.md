@@ -686,3 +686,11 @@ Phase 4:
 - 截图更新 23 张 → commit `d3b363f`
 - git push 成功（origin/master）- 2 commits 推送（ec55d89 + d3b363f）
 - Phase 1 全部任务持续验证通过
+
+**Phase 1 日常验证**（2026-04-20，17:15 cron）：
+- 后端 API：`GET /api/v1/projects` → 200 ✅
+- 后端服务正常（uvicorn ✅，进程 14727）
+- 前端服务正常（vite ✅，进程 14749）
+- Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
+- git status 干净（无 pending changes）
+- Phase 1 全部任务持续验证通过
