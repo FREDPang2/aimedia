@@ -703,3 +703,11 @@ Phase 4:
 - 截图更新 21 张 → commit `0f6d12a`
 - git push 成功（origin/master）
 - Phase 1 全部任务持续验证通过
+
+**Phase 1 日常验证**（2026-04-21，11:27 cron）：
+- git push 成功（origin/master）→ 1 commit 推送（5b585b4）
+- 后端服务宕机 → 重启后正常（uvicorn ✅）
+- 前端服务宕机 → 重启后正常（vite ✅）
+- Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
+- git status 干净（无 pending changes）
+- Phase 1 全部任务持续验证通过
