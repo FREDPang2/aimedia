@@ -704,6 +704,16 @@ Phase 4:
 - git push 成功（origin/master）
 - Phase 1 全部任务持续验证通过
 
+**Phase 1 日常验证**（2026-04-21，12:31 cron）：
+- git commit 25 张截图更新 → commit `04f379d`
+- ⚠️ git push 超时（Clash Verge 代理未运行，GitHub 访问不通）
+- 本地 commit 已保存，网络恢复后可 push
+- 后端服务正常（uvicorn ✅）
+- 前端服务正常（vite ✅）
+- Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
+- git status 干净（无 pending changes）
+- Phase 1 全部任务持续验证通过
+
 **Phase 1 日常验证**（2026-04-21，11:27 cron）：
 - git push 成功（origin/master）→ 1 commit 推送（5b585b4）
 - 后端服务宕机 → 重启后正常（uvicorn ✅）
