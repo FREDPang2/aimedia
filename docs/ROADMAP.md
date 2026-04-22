@@ -838,3 +838,11 @@ Phase 4:
 - 截图更新 25 张 → commit `dec7b9e`
 - ⚠️ git push 超时（网络不稳定，本地 commit 已保存）
 - Phase 1 全部任务持续验证通过
+
+**Phase 1 日常验证**（2026-04-22，15:50 cron）：
+- 后端服务宕机 → 重启后正常（uvicorn ✅，进程 28283）
+- 前端服务宕机 → 重启后正常（vite ✅，进程 28292）
+- Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
+- 截图更新 23 张 → commit `508c049`
+- git push 成功（origin/master）
+- Phase 1 全部任务持续验证通过
