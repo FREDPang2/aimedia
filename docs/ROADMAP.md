@@ -812,3 +812,11 @@ Phase 4:
 - ⚠️ git push 超时（Clash Verge 代理未运行，GitHub 访问不通）
 - 本地 commit 已保存，网络恢复后可 push
 - Phase 1 全部任务持续验证通过
+
+**Phase 1 日常验证**（2026-04-22，12:39 cron）：
+- 后端服务宕机 → 重启后正常（uvicorn ✅，进程 17998）
+- 前端服务宕机 → 重启后正常（vite ✅，进程 18003）
+- Playwright 测试：基础 22/22 ✅ 深度 10/10 ✅
+- 截图更新 24 张 → commit `a7e4423`
+- git push 成功（origin/master）→ 3 commits 推送（a1b21ea + bdba595 + a7e4423）
+- Phase 1 全部任务持续验证通过
